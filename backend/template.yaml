@@ -1,0 +1,96 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: MeeraAI website backend - contact form (SES) and SpectraSense photo demo (Bedrock). Region ap-south-1.
+
+Parameters:
+  AllowedOrigins:
+    Type: CommaDelimitedList
+    Default: https://meeraaitech.com,https://www.meeraaitech.com
+    Description: Sites allowed to call the API (CORS).
+  ToAddress:
+    Type: String
+    Default: Official@meeraaitech.com
+    Description: Where contact-form messages are delivered.
+  FromAddress:
+    Type: String
+    Default: website@meeraaitech.com
+    Description: Sender address. Must be an SES-verified identity (verify the whole meeraaitech.com domain).
+  ModelId:
+    Type: String
+    Default: global.anthropic.claude-haiku-4-5-20251001-v1:0
+    Description: Bedrock inference profile for the photo demo. Haiku is fast and cheap; switch to global.anthropic.claude-sonnet-4-6 for richer descriptions.
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Architectures: [arm64]
+    MemorySize: 512
+    Timeout: 30
+    Environment:
+      Variables:
+        ALLOWED_ORIGINS: !Join [',', !Ref AllowedOrigins]
+
+Resources:
+  Api:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins: !Ref AllowedOrigins
+        AllowMethods: [POST, OPTIONS]
+        AllowHeaders: [content-type]
+        MaxAge: 600
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 10
+        ThrottlingRateLimit: 3
+
+  ContactFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: contact.handler
+      CodeUri: src/
+      Environment:
+        Variables:
+          TO_ADDRESS: !Ref ToAddress
+          FROM_ADDRESS: !Ref FromAddress
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: [ses:SendEmail, ses:SendRawEmail]
+              Resource: '*'
+      Events:
+        Post:
+          Type: HttpApi
+          Properties: { ApiId: !Ref Api, Path: /contact, Method: POST }
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties: { Format: esm, OutExtension: ['.js=.mjs'], Target: es2022, EntryPoints: [contact.mjs], Banner: ["js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);"] }
+
+  DescribeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: describe.handler
+      CodeUri: src/
+      MemorySize: 1024
+      Environment:
+        Variables:
+          MODEL_ID: !Ref ModelId
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: [bedrock:InvokeModel]
+              Resource:
+                - arn:aws:bedrock:*::foundation-model/anthropic.*
+                - !Sub arn:aws:bedrock:*:${AWS::AccountId}:inference-profile/*
+                - arn:aws:bedrock:::foundation-model/anthropic.*
+      Events:
+        Post:
+          Type: HttpApi
+          Properties: { ApiId: !Ref Api, Path: /describe, Method: POST }
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties: { Format: esm, OutExtension: ['.js=.mjs'], Target: es2022, EntryPoints: [describe.mjs], Banner: ["js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);"] }
+
+Outputs:
+  ApiUrl:
+    Description: Paste this into MAIT_API at the top of the site's script.
+    Value: !Sub https://${Api}.execute-api.${AWS::Region}.amazonaws.com

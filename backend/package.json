@@ -1,0 +1,5 @@
+{
+  "name": "meeraai-site-backend",
+  "private": true,
+  "devDependencies": { "esbuild": "^0.24.0" }
+}
