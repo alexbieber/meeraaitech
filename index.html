@@ -1,0 +1,905 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>MeeraAI Tech Solutions</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="MeeraAI Tech Solutions — AI, AR/VR, and custom software that transforms ideas into reality.">
+<meta name="theme-color" content="#07070d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,500;12..96,700;12..96,800&family=Geist:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one fixed WebGL particle field behind a single scrolling column; each section re-shapes the field. Dark by design. */
+:root{
+  --ink:#07070d;          /* page ground */
+  --ink-2:#0f0f1a;        /* raised surface */
+  --ink-3:#171726;        /* hover surface */
+  --line:#24233a;         /* hairlines */
+  --fg:#eceaf4;           /* primary text */
+  --muted:#9d9ab3;        /* secondary text */
+  --saffron:#ff9f45;      /* warm accent */
+  --lilac:#a99bff;        /* cool accent */
+  --display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --body:"Geist", "Inter", "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --r:18px;
+  --wrap:1180px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;background:var(--ink)}
+body{margin:0;background:var(--ink);color:var(--fg);font:400 16px/1.6 var(--body);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--ink)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--saffron);outline-offset:3px;border-radius:6px}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.02em;line-height:1.02;margin:0;text-wrap:balance}
+p{margin:0}
+.wrap{max-width:var(--wrap);margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--saffron);display:inline-flex;gap:10px;align-items:center}
+.eyebrow::before{content:"";width:22px;height:1px;background:currentColor}
+.grad{background:linear-gradient(100deg,var(--saffron) 10%,var(--lilac) 85%);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* 3D stage */
+#stage{position:fixed;inset:0;z-index:0;pointer-events:none}
+#stage canvas{display:block;width:100%;height:100%}
+.vignette{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(120% 90% at 50% 40%,transparent 40%,color-mix(in srgb,var(--ink) 85%,transparent) 100%)}
+main,header,footer{position:relative;z-index:2}
+
+/* Nav */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%);background:color-mix(in srgb,var(--ink) 62%,transparent);border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.nav .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:14px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;font:800 20px/1 var(--display);letter-spacing:.02em}
+.logo-mark{width:30px;height:30px;border-radius:9px;background:conic-gradient(from 210deg,var(--saffron),var(--lilac),var(--saffron));display:grid;place-items:center;box-shadow:0 0 24px color-mix(in srgb,var(--saffron) 40%,transparent)}
+.logo-mark::after{content:"";width:12px;height:12px;border-radius:50%;background:var(--ink)}
+.nav-links{display:flex;gap:4px;list-style:none;margin:0;padding:0}
+.nav-links a{display:block;padding:8px 12px;border-radius:999px;text-decoration:none;font-size:14px;color:var(--muted);transition:color .2s,background .2s}
+.nav-links a:hover{color:var(--fg);background:var(--ink-3)}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:13px 22px;border-radius:999px;font:600 15px/1 var(--body);text-decoration:none;border:1px solid var(--line);color:var(--fg);background:color-mix(in srgb,var(--ink-2) 80%,transparent);cursor:pointer;transition:transform .25s,border-color .25s,background .25s}
+.btn:hover{transform:translateY(-2px);border-color:var(--lilac)}
+.btn.primary{background:var(--saffron);color:var(--ink);border-color:var(--saffron)}
+.btn.primary:hover{background:color-mix(in srgb,var(--saffron) 85%,white)}
+.btn.sm{padding:9px 16px;font-size:14px}
+.arrow{transition:transform .25s}
+.btn:hover .arrow{transform:translateX(4px)}
+@media (max-width:860px){.nav-links{display:none}}
+
+/* Sections */
+section{padding-block:clamp(80px,12vw,150px)}
+.sec-head{display:grid;gap:18px;max-width:720px;margin-bottom:clamp(36px,5vw,64px)}
+.sec-head h2{font-size:clamp(36px,5.6vw,68px)}
+.sec-head p{color:var(--muted);font-size:clamp(16px,1.4vw,18px);max-width:58ch}
+.right{margin-left:auto;text-align:right}
+.right .eyebrow{flex-direction:row-reverse}
+.right p{margin-left:auto}
+
+/* Hero */
+.hero{padding-block:clamp(90px,15vh,170px) clamp(70px,10vh,120px)}
+.hero-inner{max-width:760px;display:grid;gap:28px}
+.hero h1{font-size:clamp(46px,8.4vw,112px);font-weight:800;letter-spacing:-.035em;line-height:.94}
+.hero h1 .w{display:inline-block;transform-origin:50% 100%;animation:rise 1.1s cubic-bezier(.2,.8,.2,1) both}
+.hero h1 .w:nth-child(2){animation-delay:.06s}.hero h1 .w:nth-child(3){animation-delay:.12s}.hero h1 .w:nth-child(4){animation-delay:.18s}.hero h1 .w:nth-child(5){animation-delay:.24s}.hero h1 .w:nth-child(6){animation-delay:.3s}
+@keyframes rise{from{transform:perspective(600px) translateY(.35em) rotateX(-55deg)}to{transform:none}}
+.hero .lede{font-size:clamp(17px,1.6vw,20px);color:var(--muted);max-width:52ch}
+.hero .lede strong{color:var(--fg);font-weight:500}
+.cta-row{display:flex;flex-wrap:wrap;gap:12px}
+.hero-meta{display:flex;flex-wrap:wrap;gap:10px 28px;margin-top:18px;font:400 12px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.hero-meta b{color:var(--fg);font-weight:500}
+.scroll-cue{margin-top:30px;display:flex;align-items:center;gap:12px;font:400 11px/1 var(--mono);letter-spacing:.16em;color:var(--muted);text-transform:uppercase}
+.scroll-cue i{width:1px;height:38px;background:linear-gradient(var(--saffron),transparent);animation:cue 2s ease-in-out infinite}
+@keyframes cue{0%,100%{transform:scaleY(.4);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}}
+
+/* 3D rotating capability ring */
+.ring-band{padding-block:30px 10px;overflow:hidden;perspective:1100px}
+.ring{--R:clamp(260px,42vw,560px);position:relative;height:56px;transform-style:preserve-3d;animation:spin 38s linear infinite;margin:0 auto;width:1px}
+.ring span{position:absolute;left:50%;top:0;white-space:nowrap;transform:translateX(-50%) rotateY(calc(var(--i)*45deg)) translateZ(var(--R));font:700 clamp(18px,2.6vw,30px)/56px var(--display);letter-spacing:-.01em;color:var(--fg);backface-visibility:visible;text-transform:uppercase}
+.ring span:nth-child(odd){color:transparent;-webkit-text-stroke:1px var(--lilac)}
+@keyframes spin{to{transform:rotateX(-8deg) rotateY(-360deg)}}
+.ring{transform:rotateX(-8deg)}
+
+/* Tilt cards */
+.tilt{--rx:0deg;--ry:0deg;--mx:50%;--my:50%;transform:perspective(900px) rotateX(var(--rx)) rotateY(var(--ry));transform-style:preserve-3d;transition:transform .5s cubic-bezier(.2,.8,.2,1),border-color .3s,background .3s;will-change:transform}
+.tilt.live{transition:transform .08s linear,border-color .3s,background .3s}
+.tilt::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(420px circle at var(--mx) var(--my),color-mix(in srgb,var(--lilac) 18%,transparent),transparent 45%);opacity:0;transition:opacity .3s}
+.tilt:hover::after{opacity:1}
+
+/* Services */
+.svc-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+@media (max-width:1020px){.svc-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.svc-grid{grid-template-columns:1fr}}
+.svc{position:relative;border:1px solid var(--line);border-radius:var(--r);background:color-mix(in srgb,var(--ink-2) 78%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:26px 22px 22px;display:flex;flex-direction:column;gap:14px;min-width:0;text-decoration:none}
+.svc:hover{border-color:color-mix(in srgb,var(--lilac) 55%,var(--line))}
+.svc .tag{font:500 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.svc .glyph{width:46px;height:46px;transform:translateZ(40px)}
+.svc h3{font-size:21px;font-weight:700;letter-spacing:-.01em;line-height:1.15;transform:translateZ(26px)}
+.svc p{color:var(--muted);font-size:14.5px;line-height:1.55;flex:1}
+.svc .more{font:500 13px/1 var(--body);color:var(--saffron);display:flex;gap:8px;align-items:center}
+.svc.feature{grid-column:span 2;background:linear-gradient(135deg,color-mix(in srgb,var(--saffron) 14%,var(--ink-2)),color-mix(in srgb,var(--ink-2) 85%,transparent) 60%)}
+@media (max-width:560px){.svc.feature{grid-column:auto}}
+
+/* Products */
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px}
+.chip{padding:9px 16px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--muted);font:500 13px/1 var(--body);cursor:pointer;transition:all .2s}
+.chip:hover{color:var(--fg)}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--ink);border-color:var(--fg)}
+.prod-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+@media (max-width:760px){.prod-grid{grid-template-columns:1fr}}
+.prod{position:relative;border:1px solid var(--line);border-radius:22px;overflow:hidden;background:var(--ink-2);display:flex;flex-direction:column;min-width:0}
+.prod .media{position:relative;aspect-ratio:16/10;max-width:100%;overflow:hidden;background:radial-gradient(80% 90% at 30% 20%,color-mix(in srgb,var(--c1) 55%,transparent),transparent 60%),radial-gradient(70% 80% at 80% 90%,color-mix(in srgb,var(--c2) 50%,transparent),transparent 60%),var(--ink-3)}
+.prod .media img{width:100%;height:100%;object-fit:cover;display:block;transform:scale(1.06) translateZ(0);transition:transform .8s cubic-bezier(.2,.8,.2,1)}
+.prod:hover .media img{transform:scale(1.12)}
+.prod .media .fallback{position:absolute;inset:0;display:grid;place-items:center;font:800 clamp(56px,9vw,110px)/1 var(--display);letter-spacing:-.04em;color:color-mix(in srgb,var(--fg) 85%,transparent);mix-blend-mode:overlay}
+.prod .media img+.fallback{display:none}
+.prod .media.noimg img{display:none}
+.prod .media.noimg .fallback{display:grid}
+.prod .body{padding:24px;display:grid;gap:12px}
+.prod .cat{font:500 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--lilac)}
+.prod h3{font-size:clamp(22px,2.4vw,28px)}
+.prod p{color:var(--muted);font-size:15px}
+.link{color:var(--saffron);text-decoration:none;font-weight:500;font-size:14px;display:inline-flex;gap:8px;align-items:center}
+.link:hover .arrow{transform:translateX(4px)}
+
+/* MuscleCRM */
+.crm{border:1px solid var(--line);border-radius:28px;background:linear-gradient(160deg,color-mix(in srgb,var(--ink-2) 92%,transparent),color-mix(in srgb,var(--ink) 80%,transparent));backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:clamp(24px,4.5vw,56px);display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(28px,5vw,64px);align-items:start}
+@media (max-width:900px){.crm{grid-template-columns:1fr}}
+.crm h2{font-size:clamp(40px,5.5vw,72px);font-weight:800}
+.crm h2 small{display:block;font:400 clamp(16px,1.6vw,19px)/1.4 var(--body);letter-spacing:0;color:var(--muted);margin-top:10px}
+.crm-left{display:grid;gap:20px}
+.crm-feats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+@media (max-width:560px){.crm-feats{grid-template-columns:1fr}}
+.crm-feats div{background:var(--ink-2);padding:20px;display:grid;gap:6px;min-width:0;transition:background .3s}
+.crm-feats div:hover{background:var(--ink-3)}
+.crm-feats h3{font:600 16px/1.3 var(--body);letter-spacing:0}
+.crm-feats p{color:var(--muted);font-size:14px;line-height:1.5}
+
+/* Brahmastra */
+.brahma{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(30px,6vw,80px);align-items:center}
+@media (max-width:900px){.brahma{grid-template-columns:1fr}}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;border:1px solid color-mix(in srgb,var(--saffron) 50%,transparent);font:500 11px/1 var(--mono);letter-spacing:.14em;color:var(--saffron);text-transform:uppercase;width:max-content}
+.badge i{width:7px;height:7px;border-radius:50%;background:var(--saffron);box-shadow:0 0 12px var(--saffron);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+.brahma-copy{display:grid;gap:22px}
+.brahma-copy h2{font-size:clamp(44px,6.4vw,84px);font-weight:800}
+.brahma-copy h2 span{display:block;font-weight:300;font-size:.42em;letter-spacing:0;color:var(--muted);margin-top:8px}
+.brahma-copy>p{color:var(--muted);font-size:17px;max-width:46ch}
+.stack-wrap{overflow:hidden;perspective:1400px;height:clamp(360px,44vw,500px);display:grid;place-items:center}
+.stack{position:relative;width:min(340px,62vw);aspect-ratio:1/1;transform-style:preserve-3d;transform:rotateX(58deg) rotateZ(-38deg);transition:transform 1s cubic-bezier(.2,.8,.2,1)}
+.layer{position:absolute;inset:0;border-radius:20px;border:1px solid color-mix(in srgb,var(--lc) 60%,transparent);background:linear-gradient(135deg,color-mix(in srgb,var(--lc) 26%,var(--ink-2)),color-mix(in srgb,var(--ink-2) 90%,transparent));box-shadow:0 30px 60px -20px rgba(0,0,0,.7),inset 0 0 40px color-mix(in srgb,var(--lc) 12%,transparent);transform:translateZ(calc(var(--z)*var(--gap,46px)));transition:transform 1s cubic-bezier(.2,.8,.2,1);padding:18px;display:grid;align-content:space-between}
+.stack-wrap:hover .layer,.stack-wrap.open .layer{--gap:78px}
+.layer b{font:500 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--fg)}
+.layer .ui{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.layer .ui i{height:22px;border-radius:6px;background:color-mix(in srgb,var(--lc) 35%,transparent)}
+.layer .ui i:nth-child(3n){grid-column:span 2}
+.feat-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 24px}
+@media (max-width:480px){.feat-list{grid-template-columns:1fr}}
+.feat-list div{display:grid;gap:4px;padding-top:14px;border-top:1px solid var(--line);min-width:0}
+.feat-list h3{font:600 16px/1.3 var(--body);letter-spacing:0;display:flex;align-items:center;gap:8px}
+.feat-list h3 i{width:8px;height:8px;border-radius:2px;background:var(--lc);transform:rotate(45deg)}
+.feat-list p{color:var(--muted);font-size:14px;line-height:1.5}
+
+/* Story */
+.story{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:clamp(30px,6vw,80px);align-items:start}
+@media (max-width:900px){.story{grid-template-columns:1fr}}
+.story-copy{display:grid;gap:20px;font-size:clamp(17px,1.5vw,19px);color:var(--muted)}
+.story-copy .big{font:500 clamp(24px,2.8vw,36px)/1.25 var(--display);letter-spacing:-.015em;color:var(--fg);text-wrap:balance}
+.facts{display:grid;gap:0;border-top:1px solid var(--line)}
+.fact{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding-block:20px;border-bottom:1px solid var(--line)}
+.fact .k{font:400 12px/1.3 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.fact .v{font:700 clamp(30px,3.4vw,44px)/1 var(--display);letter-spacing:-.03em;font-variant-numeric:tabular-nums;text-align:right}
+.values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:clamp(40px,6vw,72px)}
+@media (max-width:760px){.values{grid-template-columns:1fr}}
+.value{position:relative;border:1px solid var(--line);border-radius:var(--r);padding:26px;background:color-mix(in srgb,var(--ink-2) 75%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:grid;gap:10px}
+.value h3{font-size:26px}
+.value p{color:var(--muted);font-size:15px}
+.value .orb{width:40px;height:40px;border-radius:50%;background:radial-gradient(circle at 32% 30%,#fff 0,var(--oc) 28%,color-mix(in srgb,var(--oc) 30%,var(--ink)) 72%);box-shadow:0 10px 30px -6px var(--oc);transform:translateZ(30px)}
+
+/* Team */
+.team-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:900px){.team-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.team-grid{grid-template-columns:1fr}}
+.person{position:relative;border:1px solid var(--line);border-radius:var(--r);padding:24px;background:color-mix(in srgb,var(--ink-2) 80%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:grid;gap:14px;align-content:start;min-width:0}
+.person header{display:flex;align-items:center;gap:14px;position:static;z-index:auto}
+.mono{flex:none;width:58px;height:58px;border-radius:50%;display:grid;place-items:center;font:700 19px/1 var(--display);color:var(--ink);background:conic-gradient(from var(--a,0deg),var(--saffron),var(--lilac),var(--saffron));transform:translateZ(36px);box-shadow:0 12px 30px -10px color-mix(in srgb,var(--lilac) 70%,transparent)}
+.person h3{font-size:21px;letter-spacing:-.01em}
+.person .role{font:500 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--saffron);margin-top:6px}
+.person p{color:var(--muted);font-size:14.5px;line-height:1.55}
+.join{margin-top:18px;display:flex;flex-wrap:wrap;gap:16px 28px;align-items:center;justify-content:space-between;border:1px dashed var(--line);border-radius:var(--r);padding:22px 24px}
+.join p{color:var(--muted);max-width:60ch}
+.join strong{color:var(--fg);font-weight:600}
+
+/* Contact */
+.contact{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(30px,5vw,64px)}
+@media (max-width:900px){.contact{grid-template-columns:1fr}}
+.contact h2{font-size:clamp(44px,6.6vw,88px);font-weight:800}
+.cinfo{display:grid;gap:0;margin-top:28px;border-top:1px solid var(--line)}
+.crow{display:grid;grid-template-columns:90px minmax(0,1fr) auto;gap:12px;align-items:center;padding-block:16px;border-bottom:1px solid var(--line)}
+.crow .k{font:400 11px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.crow .v{font-size:15.5px;user-select:all;overflow-wrap:anywhere}
+.crow .v.addr{user-select:text}
+.copy{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:6px 12px;font:500 12px/1 var(--body);cursor:pointer}
+.copy:hover{color:var(--fg);border-color:var(--lilac)}
+.socials{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+form{border:1px solid var(--line);border-radius:24px;padding:clamp(20px,3.5vw,36px);background:color-mix(in srgb,var(--ink-2) 85%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:grid;gap:16px}
+.frow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:560px){.frow{grid-template-columns:1fr}}
+label{display:grid;gap:8px;font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+input,select,textarea{width:100%;background:var(--ink);border:1px solid var(--line);border-radius:12px;padding:13px 14px;color:var(--fg);font:400 15px/1.4 var(--body);transition:border-color .2s,box-shadow .2s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--saffron);box-shadow:0 0 0 3px color-mix(in srgb,var(--saffron) 22%,transparent)}
+textarea{resize:vertical;min-height:130px}
+.form-note{font-size:14px;color:var(--muted)}
+.form-note.ok{color:var(--fg);border:1px solid color-mix(in srgb,var(--saffron) 45%,var(--line));border-radius:12px;padding:14px;background:color-mix(in srgb,var(--saffron) 8%,transparent)}
+
+/* Footer */
+footer{border-top:1px solid var(--line);background:color-mix(in srgb,var(--ink) 88%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.foot{display:grid;grid-template-columns:minmax(0,1.4fr) repeat(3,minmax(0,1fr));gap:32px;padding-block:56px 28px}
+@media (max-width:860px){.foot{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:480px){.foot{grid-template-columns:1fr}}
+.foot h4{font:500 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 16px}
+.foot ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.foot ul a{text-decoration:none;color:var(--fg);font-size:14px;opacity:.85}
+.foot ul a:hover{opacity:1;color:var(--saffron)}
+.foot .about p{color:var(--muted);font-size:14px;max-width:34ch;margin-top:14px}
+.legal{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;padding-block:20px 32px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.legal nav{display:flex;gap:18px;flex-wrap:wrap}
+.legal a{text-decoration:none}
+.legal a:hover{color:var(--fg)}
+.giant{font:800 clamp(64px,17vw,250px)/.8 var(--display);letter-spacing:-.05em;text-align:center;padding-top:20px;background:linear-gradient(180deg,color-mix(in srgb,var(--fg) 16%,transparent),transparent 85%);-webkit-background-clip:text;background-clip:text;color:transparent;user-select:none;overflow:hidden}
+
+/* Scroll-in depth (content always visible; only depth animates) */
+.rv{transform:perspective(1000px) translateY(26px) rotateX(7deg);transition:transform 1s cubic-bezier(.2,.8,.2,1)}
+.rv.in{transform:none}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition-duration:.01ms!important}
+  html{scroll-behavior:auto}
+  .rv{transform:none}
+}
+</style>
+</head>
+<body>
+
+<div id="stage" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="#top" aria-label="MAIT home"><span class="logo-mark"></span>MAIT</a>
+    <ul class="nav-links">
+      <li><a href="#services">Services</a></li>
+      <li><a href="#products">Products</a></li>
+      <li><a href="#brahmastra">Brahmastra</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#team">Team</a></li>
+    </ul>
+    <a class="btn sm primary" href="#contact">Get in touch</a>
+  </div>
+</header>
+
+<main id="top">
+  <!-- HERO -->
+  <section class="hero" data-shape="0">
+    <div class="wrap">
+      <div class="hero-inner">
+        <span class="eyebrow">MeeraAI Tech Solutions LLP</span>
+        <h1 aria-label="Innovating technology for a better tomorrow.">
+          <span class="w">Innovating</span> <span class="w">technology</span> <span class="w">for</span> <span class="w">a</span> <span class="w grad">better</span> <span class="w grad">tomorrow.</span>
+        </h1>
+        <p class="lede">MAIT develops <strong>cutting-edge AI technology, custom software, and AR/VR experiences</strong> that transform ideas into reality, from smart glasses for the visually impaired to a no-code platform for everyone.</p>
+        <div class="cta-row">
+          <a class="btn primary" href="#products">Explore our projects <span class="arrow">→</span></a>
+          <a class="btn" href="#brahmastra">Learn about Brahmastra</a>
+        </div>
+        <div class="hero-meta">
+          <span>Est. <b>2023</b></span>
+          <span>Based in <b>Mumbai</b></span>
+          <span><b>8</b> service lines</span>
+          <span><b>20+</b> people</span>
+        </div>
+        <div class="scroll-cue"><i></i>Scroll to reshape</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="ring-band" aria-hidden="true">
+    <div class="ring">
+      <span style="--i:0">AI Integration</span>
+      <span style="--i:1">AR/VR Development</span>
+      <span style="--i:2">Smart Glasses</span>
+      <span style="--i:3">No-Code Platform</span>
+      <span style="--i:4">Custom Software</span>
+      <span style="--i:5">Voice Chat</span>
+      <span style="--i:6">Cloud Solutions</span>
+      <span style="--i:7">Data Analytics &amp; BI</span>
+    </div>
+  </div>
+
+  <!-- SERVICES -->
+  <section id="services" data-shape="1">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="eyebrow">What we do</span>
+        <h2>Our <span class="grad">services</span></h2>
+        <p>A comprehensive range of technology services to bring your vision to life, from wearable AI hardware to the cloud it runs on.</p>
+      </div>
+      <div class="svc-grid">
+        <a class="svc tilt feature rv" href="https://meeraaitech.com/services/smart-glasses">
+          <span class="tag">Assistive hardware</span>
+          <svg class="glyph" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13" cy="26" r="8" stroke="#ff9f45"/><circle cx="35" cy="26" r="8" stroke="#ff9f45"/><path d="M21 25c2-2 4-2 6 0M5 24 2 18M43 24l3-6" stroke="#a99bff"/></svg>
+          <h3>Smart Glasses for Visual Impairment</h3>
+          <p>Our innovative smart glasses technology helps visually impaired individuals navigate their surroundings with enhanced awareness and independence.</p>
+          <span class="more">Learn more <span class="arrow">→</span></span>
+        </a>
+        <a class="svc tilt rv" href="https://meeraaitech.com/services/ar-vr-solutions">
+          <span class="tag">Immersive</span>
+          <svg class="glyph" viewBox="0 0 48 48" fill="none" stroke-width="2"><path d="M24 6 40 15v18L24 42 8 33V15z" stroke="#a99bff"/><path d="M8 15l16 9 16-9M24 24v18" stroke="#ff9f45"/></svg>
+          <h3>AR/VR Development</h3>
+          <p>Create immersive augmented and virtual reality experiences that transform how users interact with your brand or product.</p>
+          <span class="more">Learn more <span class="arrow">→</span></span>
+        </a>
+        <a class="svc tilt rv" href="https://meeraaitech.com/services/voice-chat">
+          <span class="tag">Social</span>
+          <svg class="glyph" viewBox="0 0 48 48" fill="none" stroke-width="2"><path d="M8 24v0M15 17v14M22 10v28M29 16v16M36 21v6M42 24v0" stroke="#ff9f45" stroke-linecap="round"/></svg>
+          <h3>Social Media Voice Chat</h3>
+          <p>Enhance your social media presence with voice chat solutions that enable real-time, engaging conversations with your audience.</p>
+          <span class="more">Learn more <span class="arrow">→</span></span>
+        </a>
+        <a class="svc tilt rv" href="https://meeraaitech.com/projects/brahmastra">
+          <span class="tag">Platform</span>
+          <svg class="glyph" viewBox="0 0 48 48" fill="none" stroke-width="2"><rect x="7" y="7" width="14" height="14" rx="3" stroke="#ff9f45"/><rect x="27" y="7" width="14" height="14" rx="3" stroke="#a99bff"/><rect x="7" y="27" width="14" height="14" rx="3" stroke="#a99bff"/><rect x="27" y="27" width="14" height="14" rx="3" stroke="#ff9f45"/></svg>
+          <h3>No-Code Platform</h3>
+          <p>Build powerful applications without writing a single line of code using our intuitive no-code development platform.</p>
+          <span class="more">Learn more <span class="arrow">→</span></span>
+        </a>
+        <a class="svc tilt rv" href="https://meeraaitech.com/services/custom-software">
+          <span class="tag">Engineering</span>
+          <svg class="glyph" viewBox="0 0 48 48" fill="none" stroke-width="2"><path d="M17 14 7 24l10 10M31 14l10 10-10 10" stroke="#a99bff"/><path d="M27 10 21 38" stroke="#ff9f45"/></svg>
+          <h3>Custom Software Development</h3>
+          <p>Tailored software solutions designed to meet your specific business needs and challenges.</p>
+          <span class="more">Learn more <span class="arrow">→</span></span>
+        </a>
+        <a class="svc tilt rv" href="https://meeraaitech.com/services/ai-integration">
+          <span class="tag">Intelligence</span>
+          <svg class="glyph" viewBox="0 0 48 48" fill="none" stroke-width="2"><circle cx="24" cy="24" r="6" stroke="#ff9f45"/><circle cx="9" cy="12" r="3" stroke="#a99bff"/><circle cx="39" cy="12" r="3" stroke="#a99bff"/><circle cx="9" cy="36" r="3" stroke="#a99bff"/><circle cx="39" cy="36" r="3" stroke="#a99bff"/><path d="M12 14l7 6M36 14l-7 6M12 34l7-6M36 34l-7-6" stroke="#a99bff"/></svg>
+          <h3>AI Integration</h3>
+          <p>Leverage the power of artificial intelligence to automate processes, gain insights, and enhance decision-making.</p>
+          <span class="more">Learn more <span class="arrow">→</span></span>
+        </a>
+        <a class="svc tilt rv" href="https://meeraaitech.com/services/cloud-solutions">
+          <span class="tag">Infrastructure</span>
+          <svg class="glyph" viewBox="0 0 48 48" fill="none" stroke-width="2"><path d="M14 34h21a8 8 0 0 0 0-16 11 11 0 0 0-21-2 9 9 0 0 0 0 18z" stroke="#a99bff"/><path d="M24 22v10M20 28l4 4 4-4" stroke="#ff9f45"/></svg>
+          <h3>Cloud Solutions</h3>
+          <p>Scalable and secure cloud infrastructure and services to support your business growth.</p>
+          <span class="more">Learn more <span class="arrow">→</span></span>
+        </a>
+        <a class="svc tilt rv" href="https://meeraaitech.com/services/data-analytics">
+          <span class="tag">Insight</span>
+          <svg class="glyph" viewBox="0 0 48 48" fill="none" stroke-width="2"><path d="M8 40h32" stroke="#a99bff"/><rect x="11" y="26" width="6" height="12" rx="1.5" stroke="#a99bff"/><rect x="21" y="18" width="6" height="20" rx="1.5" stroke="#ff9f45"/><rect x="31" y="10" width="6" height="28" rx="1.5" stroke="#a99bff"/></svg>
+          <h3>Data Analytics &amp; BI</h3>
+          <p>Transform your data into actionable insights with comprehensive analytics and business intelligence solutions.</p>
+          <span class="more">Learn more <span class="arrow">→</span></span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRODUCTS -->
+  <section id="products" data-shape="2">
+    <div class="wrap">
+      <div class="sec-head right rv">
+        <span class="eyebrow">Our work</span>
+        <h2>Our innovative <span class="grad">products</span></h2>
+        <p>Flagship products that combine AI, AR/VR, and modern web technologies to solve real-world problems at scale.</p>
+      </div>
+      <div class="filters" role="group" aria-label="Filter products">
+        <button class="chip" id="f-all" data-f="all" aria-pressed="true">All</button>
+        <button class="chip" id="f-hw" data-f="hw" aria-pressed="false">AI Hardware</button>
+        <button class="chip" id="f-web" data-f="web" aria-pressed="false">Web &amp; Mobile</button>
+        <button class="chip" id="f-xr" data-f="xr" aria-pressed="false">AR/VR</button>
+        <button class="chip" id="f-dev" data-f="dev" aria-pressed="false">Development Tools</button>
+      </div>
+      <div class="prod-grid">
+        <article class="prod tilt rv" data-cat="hw">
+          <div class="media" style="--c1:#ff9f45;--c2:#a99bff"><img src="https://meeraaitech.com/premium-glasses.jpg" alt="Smart glasses for visually impaired users" loading="lazy" onerror="this.parentNode.classList.add('noimg')"><span class="fallback">AI·EYE</span></div>
+          <div class="body">
+            <span class="cat">AI Hardware</span>
+            <h3>Smart Glasses for Visually Impaired</h3>
+            <p>Revolutionary AI-powered smart glasses that assist visually impaired individuals with navigation, object recognition, and everyday tasks.</p>
+            <a class="link" href="https://meeraaitech.com/projects/smart-glasses">See details <span class="arrow">→</span></a>
+          </div>
+        </article>
+        <article class="prod tilt rv" data-cat="web">
+          <div class="media" style="--c1:#a99bff;--c2:#ff6f91"><img src="https://meeraaitech.com/premium-audio.jpg" alt="Voice chat social platform" loading="lazy" onerror="this.parentNode.classList.add('noimg')"><span class="fallback">VOICE</span></div>
+          <div class="body">
+            <span class="cat">Web &amp; Mobile</span>
+            <h3>Voice Chat Social Platform</h3>
+            <p>A next-generation social platform focused on real-time voice rooms, helping communities build deeper, more human connections.</p>
+            <a class="link" href="https://meeraaitech.com/projects/voice-chat">See details <span class="arrow">→</span></a>
+          </div>
+        </article>
+        <article class="prod tilt rv" data-cat="xr">
+          <div class="media" style="--c1:#4fd1c5;--c2:#a99bff"><img src="https://meeraaitech.com/premium-vr-person.jpg" alt="Person using an AR shopping experience" loading="lazy" onerror="this.parentNode.classList.add('noimg')"><span class="fallback">AR</span></div>
+          <div class="body">
+            <span class="cat">AR/VR</span>
+            <h3>Immersive AR Shopping Experience</h3>
+            <p>Customers place true-to-scale 3D models in their homes before buying, boosting confidence and conversions.</p>
+            <a class="link" href="https://meeraaitech.com/projects/ar-vr-solutions">See details <span class="arrow">→</span></a>
+          </div>
+        </article>
+        <article class="prod tilt rv" data-cat="dev">
+          <div class="media" style="--c1:#ff9f45;--c2:#ff6f91"><img src="https://meeraaitech.com/Brahmastra_no_code_platform.jpeg" alt="Brahmastra no-code platform" loading="lazy" onerror="this.parentNode.classList.add('noimg')"><span class="fallback">BRAHMASTRA</span></div>
+          <div class="body">
+            <span class="cat">Development Tools</span>
+            <h3>Brahmastra No-Code Platform</h3>
+            <p>Our flagship no-code platform that lets teams design, automate, and deploy powerful applications visually, without writing a single line of code.</p>
+            <a class="link" href="https://meeraaitech.com/projects/brahmastra">See details <span class="arrow">→</span></a>
+          </div>
+        </article>
+        <article class="prod tilt rv" data-cat="web" hidden data-only>
+          <div class="media" style="--c1:#ff9f45;--c2:#4fd1c5"><img src="https://meeraaitech.com/crm1.png" alt="MuscleCRM gym management dashboard" loading="lazy" onerror="this.parentNode.classList.add('noimg')"><span class="fallback">CRM</span></div>
+          <div class="body">
+            <span class="cat">Web &amp; Mobile</span>
+            <h3>MuscleCRM</h3>
+            <p>The complete CRM for gyms and wellness clubs: members, bookings, billing and analytics in one place.</p>
+            <a class="link" href="https://musclecrm.com/">Go to site <span class="arrow">→</span></a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- MUSCLECRM -->
+  <section id="musclecrm" data-shape="3" style="padding-top:0">
+    <div class="wrap">
+      <div class="crm rv">
+        <div class="crm-left">
+          <span class="eyebrow">Complete CRM for gyms</span>
+          <h2><span class="grad">MuscleCRM</span><small>for gyms &amp; wellness clubs</small></h2>
+          <p style="color:var(--muted)">The complete CRM system for fitness centers. Streamline member management, automate billing, and grow your gym business with a specialised solution.</p>
+          <div class="cta-row">
+            <a class="btn primary" href="https://musclecrm.com/">Go to site <span class="arrow">↗</span></a>
+            <a class="btn" href="https://meeraaitech.com/projects/musclecrm">See details</a>
+          </div>
+        </div>
+        <div class="crm-feats">
+          <div><h3>Member Management</h3><p>Complete member lifecycle from onboarding to renewal. Track attendance and manage members.</p></div>
+          <div><h3>Class &amp; Session Booking</h3><p>Booking for classes, personal training, and gym facilities.</p></div>
+          <div><h3>Billing &amp; Payments</h3><p>Automated billing, invoice generation, payment tracking, and membership plans.</p></div>
+          <div><h3>Analytics &amp; Reports</h3><p>Revenue insights, member analytics, and performance metrics for your gym.</p></div>
+          <div><h3>Communication Hub</h3><p>Email, SMS, and WhatsApp notifications for member engagement and marketing.</p></div>
+          <div><h3>Personal Training</h3><p>Trainer assignments, session tracking, and progress monitoring.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BRAHMASTRA -->
+  <section id="brahmastra" data-shape="4">
+    <div class="wrap brahma">
+      <div class="stack-wrap rv" id="stack">
+        <div class="stack">
+          <div class="layer" style="--z:0;--lc:#4fd1c5"><b>Deploy</b><div class="ui"><i></i><i></i><i></i><i></i><i></i></div></div>
+          <div class="layer" style="--z:1;--lc:#a99bff"><b>API integration</b><div class="ui"><i></i><i></i><i></i><i></i><i></i></div></div>
+          <div class="layer" style="--z:2;--lc:#ff6f91"><b>Visual editor</b><div class="ui"><i></i><i></i><i></i><i></i><i></i></div></div>
+          <div class="layer" style="--z:3;--lc:#ff9f45"><b>Templates</b><div class="ui"><i></i><i></i><i></i><i></i><i></i></div></div>
+        </div>
+      </div>
+      <div class="brahma-copy rv">
+        <span class="badge"><i></i>Coming soon</span>
+        <h2>Brahmastra<span>No-Code Platform</span></h2>
+        <p>Build powerful applications without writing a single line of code. Brahmastra empowers everyone to create custom software with ease.</p>
+        <div class="feat-list">
+          <div style="--lc:#ff9f45"><h3><i></i>Pre-Built Templates</h3><p>Dozens of industry-specific templates to jumpstart your project.</p></div>
+          <div style="--lc:#ff6f91"><h3><i></i>Powerful Customization</h3><p>Tailor every aspect of your application in an intuitive visual editor.</p></div>
+          <div style="--lc:#a99bff"><h3><i></i>API Integration</h3><p>Connect to any third-party service with simple API integration tools.</p></div>
+          <div style="--lc:#4fd1c5"><h3><i></i>Quick Deployment</h3><p>Build and deploy applications in minutes, no coding knowledge required.</p></div>
+        </div>
+        <div class="cta-row">
+          <a class="btn primary" href="#contact" data-subject="Brahmastra Tool">Join the waitlist <span class="arrow">→</span></a>
+          <a class="btn" href="https://meeraaitech.com/projects/brahmastra">Learn more</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about" data-shape="5">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="eyebrow">Our journey</span>
+        <h2>About <span class="grad">MeeraAI</span></h2>
+      </div>
+      <div class="story">
+        <div class="story-copy rv">
+          <p class="big">Founded in 2023 with a simple mission: to leverage artificial intelligence and mixed reality to transform how people interact with technology.</p>
+          <p>What started as a small team of three passionate engineers has grown into a dynamic company of over 20 professionals, each bringing unique expertise and perspective to the work.</p>
+          <p>Today we partner with forward-thinking organizations across healthcare, manufacturing, retail and education, helping them embrace emerging technologies to achieve their goals.</p>
+        </div>
+        <div class="facts rv">
+          <div class="fact"><span class="k">Founded</span><span class="v">2023</span></div>
+          <div class="fact"><span class="k">Founding engineers</span><span class="v">3</span></div>
+          <div class="fact"><span class="k">Team today</span><span class="v grad">20+</span></div>
+          <div class="fact"><span class="k">Headquarters</span><span class="v" style="font-size:clamp(22px,2.4vw,30px)">Bandra, Mumbai</span></div>
+        </div>
+      </div>
+      <div class="values">
+        <div class="value tilt rv" style="--oc:#ff9f45"><span class="orb"></span><h3>Innovation</h3><p>We're constantly exploring new technologies and approaches to create cutting-edge solutions.</p></div>
+        <div class="value tilt rv" style="--oc:#a99bff"><span class="orb"></span><h3>Collaboration</h3><p>We partner closely with our clients, treating their challenges as our own and working together toward solutions.</p></div>
+        <div class="value tilt rv" style="--oc:#4fd1c5"><span class="orb"></span><h3>Excellence</h3><p>We're committed to delivering the highest quality in everything we do, from code to customer service.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TEAM -->
+  <section id="team" data-shape="6" style="padding-top:0">
+    <div class="wrap">
+      <div class="sec-head right rv">
+        <span class="eyebrow">Our people</span>
+        <h2>Meet the <span class="grad">team</span></h2>
+        <p>A diverse team of experts dedicated to creating innovative solutions that make a difference.</p>
+      </div>
+      <div class="team-grid">
+        <article class="person tilt rv"><header><span class="mono" style="--a:0deg">AS</span><div><h3>Ambar Singh</h3><div class="role">Director</div></div></header><p>Co-founded MeeraAI Tech Solutions with a vision to create impactful technology. As Director, he leads innovation initiatives and keeps the company's commitment to excellence.</p></article>
+        <article class="person tilt rv"><header><span class="mono" style="--a:60deg">DK</span><div><h3>Deepak Kasthwal</h3><div class="role">CFO</div></div></header><p>Oversees financial operations with expertise in strategic financial planning and business growth, ensuring sustainable financial health and strategic investment.</p></article>
+        <article class="person tilt rv"><header><span class="mono" style="--a:120deg">AB</span><div><h3>Amit Barve</h3><div class="role">Head Advisor</div></div></header><p>Brings extensive experience in technology leadership and strategic planning, guiding the company's vision and its standards of innovation.</p></article>
+        <article class="person tilt rv"><header><span class="mono" style="--a:180deg">MK</span><div><h3>Mohammad Kaif Ali</h3><div class="role">Director</div></div></header><p>Brings strategic vision and leadership, shaping the company's direction and making sure clients receive exceptional value.</p></article>
+        <article class="person tilt rv"><header><span class="mono" style="--a:240deg">VK</span><div><h3>Vinod Kadkotra</h3><div class="role">Director</div></div></header><p>Brings strategic vision and leadership, playing a key role in the company's direction and client delivery.</p></article>
+        <article class="person tilt rv"><header><span class="mono" style="--a:300deg">AL</span><div><h3>Aarav Lodha</h3><div class="role">Technical Team</div></div></header><p>Contributes his expertise to the development team, bringing fresh perspectives and innovative solutions to our projects.</p></article>
+      </div>
+      <div class="join rv">
+        <p><strong>Join our team.</strong> We're always looking for talented people. See current openings and whether there's a fit for you.</p>
+        <a class="btn" href="https://meeraaitech.com/careers">View careers <span class="arrow">→</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact" data-shape="7">
+    <div class="wrap contact">
+      <div class="rv">
+        <span class="eyebrow">Contact</span>
+        <h2 style="margin-top:18px">Let's build <span class="grad">something.</span></h2>
+        <p style="color:var(--muted);margin-top:18px;max-width:42ch">Have a project in mind or want to learn more about our services? We'd love to hear from you.</p>
+        <div class="cinfo">
+          <div class="crow"><span class="k">Email</span><a class="v" id="email" href="mailto:Official@meeraaitech.com" style="text-decoration:none">Official@meeraaitech.com</a><button class="copy" type="button" data-copy="Official@meeraaitech.com">Copy</button></div>
+          <div class="crow"><span class="k">Phone</span><a class="v" href="tel:+919798893573" style="text-decoration:none">+91 97988 93573</a><button class="copy" type="button" data-copy="+919798893573">Copy</button></div>
+          <div class="crow"><span class="k">Office</span><span class="v addr">2nd Floor, A Wing 203, Rizvi Palace, Hill Road, Bandra (West), Mumbai 400 050</span><span></span></div>
+        </div>
+        <div class="socials">
+          <a class="btn sm" href="https://in.linkedin.com/company/meeraai-tech-solutions">LinkedIn ↗</a>
+          <a class="btn sm" href="https://www.instagram.com/meeraaitech">Instagram ↗</a>
+        </div>
+      </div>
+      <form id="cform" class="rv" novalidate>
+        <div class="frow">
+          <label for="c-name">Your name<input id="c-name" name="name" required autocomplete="name" placeholder="Priya Sharma"></label>
+          <label for="c-email">Your email<input id="c-email" name="email" type="email" required autocomplete="email" placeholder="priya@company.com"></label>
+        </div>
+        <label for="c-subject">Subject
+          <select id="c-subject" name="subject" required>
+            <option value="">Select a subject</option>
+            <option>General Inquiry</option><option>Custom Software</option><option>Website Development</option><option>Smart Glasses</option><option>AR/VR Solutions</option><option>Brahmastra Tool</option><option>Partnerships</option><option>Other</option>
+          </select>
+        </label>
+        <label for="c-msg">Your message<textarea id="c-msg" name="message" required placeholder="Tell us about your project, timeline and goals."></textarea></label>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between">
+          <p class="form-note" id="fnote">We usually reply within two working days.</p>
+          <button class="btn primary" type="submit">Send message <span class="arrow">→</span></button>
+        </div>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div class="about">
+        <a class="logo" href="#top"><span class="logo-mark"></span>MAIT</a>
+        <p>Innovating technology for a better tomorrow. We develop cutting-edge solutions that transform ideas into reality.</p>
+      </div>
+      <div><h4>Explore</h4><ul><li><a href="#services">Services</a></li><li><a href="#products">Projects</a></li><li><a href="#about">About us</a></li><li><a href="https://meeraaitech.com/blog">Blog</a></li><li><a href="https://meeraaitech.com/careers">Careers</a></li></ul></div>
+      <div><h4>Projects</h4><ul><li><a href="https://meeraaitech.com/projects/smart-glasses">Smart Glasses</a></li><li><a href="https://meeraaitech.com/projects/voice-chat">Voice Chat</a></li><li><a href="https://meeraaitech.com/projects/ar-vr-solutions">AR/VR Solutions</a></li><li><a href="https://meeraaitech.com/projects/brahmastra">Brahmastra</a></li><li><a href="https://meeraaitech.com/projects/smart-yoga-mat">Smart Yoga Mat</a></li></ul></div>
+      <div><h4>Services</h4><ul><li><a href="https://meeraaitech.com/services/ai-integration">AI Integration</a></li><li><a href="https://meeraaitech.com/services/custom-software">Custom Software</a></li><li><a href="https://meeraaitech.com/services/cloud-solutions">Cloud Solutions</a></li><li><a href="https://meeraaitech.com/services/data-analytics">Data Analytics &amp; BI</a></li></ul></div>
+    </div>
+    <div class="giant" aria-hidden="true">MeeraAI</div>
+    <div class="legal">
+      <span>© 2026 MeeraAI Tech Solutions LLP. All rights reserved.</span>
+      <nav><a href="https://meeraaitech.com/privacy-policy">Privacy Policy</a><a href="https://meeraaitech.com/terms">Terms of Service</a><a href="https://meeraaitech.com/cookies-policy">Cookies Policy</a></nav>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- UI: tilt cards ---------- */
+  const fine = matchMedia('(pointer:fine)').matches;
+  if (fine && !reduce) {
+    document.querySelectorAll('.tilt').forEach(el => {
+      el.addEventListener('pointermove', e => {
+        const r = el.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+        el.classList.add('live');
+        el.style.setProperty('--ry', ((x - .5) * 10).toFixed(2) + 'deg');
+        el.style.setProperty('--rx', ((.5 - y) * 10).toFixed(2) + 'deg');
+        el.style.setProperty('--mx', (x * 100) + '%');
+        el.style.setProperty('--my', (y * 100) + '%');
+      });
+      el.addEventListener('pointerleave', () => {
+        el.classList.remove('live');
+        el.style.setProperty('--rx', '0deg'); el.style.setProperty('--ry', '0deg');
+      });
+    });
+  }
+
+  /* ---------- UI: depth reveal (content visible at rest) ---------- */
+  const rvs = document.querySelectorAll('.rv');
+  if ('IntersectionObserver' in window && !reduce) {
+    const io = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } }), { rootMargin: '0px 0px -8% 0px' });
+    rvs.forEach(el => io.observe(el));
+  } else rvs.forEach(el => el.classList.add('in'));
+
+  /* ---------- UI: product filter ---------- */
+  const chips = document.querySelectorAll('.chip');
+  const prods = document.querySelectorAll('.prod');
+  chips.forEach(c => c.addEventListener('click', () => {
+    chips.forEach(x => x.setAttribute('aria-pressed', x === c ? 'true' : 'false'));
+    const f = c.dataset.f;
+    prods.forEach(p => {
+      const match = f === 'all' ? !p.hasAttribute('data-only') : p.dataset.cat === f;
+      p.hidden = !match;
+    });
+  }));
+
+  /* ---------- UI: brahmastra stack opens in view ---------- */
+  const stack = document.getElementById('stack');
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(es => es.forEach(en => stack.classList.toggle('open', en.intersectionRatio > .55)), { threshold: [0, .55, 1] }).observe(stack);
+  }
+
+  /* ---------- UI: waitlist sets subject ---------- */
+  document.querySelectorAll('[data-subject]').forEach(a => a.addEventListener('click', () => {
+    document.getElementById('c-subject').value = a.dataset.subject;
+  }));
+
+  /* ---------- UI: copy buttons ---------- */
+  document.querySelectorAll('.copy').forEach(b => b.addEventListener('click', () => {
+    const t = b.dataset.copy;
+    const done = () => { b.textContent = 'Copied'; setTimeout(() => b.textContent = 'Copy', 1600); };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents(b.previousElementSibling); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = 'Selected'; setTimeout(() => b.textContent = 'Copy', 1600); };
+    try { navigator.clipboard.writeText(t).then(done, fallback); } catch (e) { fallback(); }
+  }));
+
+  /* ---------- UI: contact form ---------- */
+  const form = document.getElementById('cform');
+  const note = document.getElementById('fnote');
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const bad = [...form.querySelectorAll('[required]')].find(f => !f.value.trim() || (f.type === 'email' && !/^\S+@\S+\.\S+$/.test(f.value)));
+    if (bad) { note.className = 'form-note'; note.textContent = bad.type === 'email' ? 'Enter a valid email address so we can reply.' : 'Fill in every field before sending.'; bad.focus(); return; }
+    const d = Object.fromEntries(new FormData(form));
+    const body = `Name: ${d.name}\nEmail: ${d.email}\n\n${d.message}`;
+    const href = `mailto:Official@meeraaitech.com?subject=${encodeURIComponent('[' + d.subject + '] Website enquiry')}&body=${encodeURIComponent(body)}`;
+    note.className = 'form-note ok';
+    note.innerHTML = 'Your message is ready. If your mail app didn’t open, send it to <b>Official@meeraaitech.com</b>.';
+    const a = document.createElement('a'); a.href = href; a.rel = 'noopener'; a.click();
+  });
+
+  /* ---------- 3D: morphing particle field ---------- */
+  if (!window.THREE) return;
+  const host = document.getElementById('stage');
+  const W = () => innerWidth, H = () => innerHeight;
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: 'high-performance' }); }
+  catch (e) { return; }
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+  renderer.setSize(W(), H());
+  host.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(42, W() / H(), .1, 100);
+  camera.position.set(0, 0, 9.5);
+
+  const small = Math.min(W(), H()) < 700;
+  const N = small ? 4200 : 8000;
+  const rnd = (a = 1) => (Math.random() * 2 - 1) * a;
+  const TAU = Math.PI * 2;
+
+  // Shape generators: each returns Float32Array(N*3)
+  function make(fn) { const a = new Float32Array(N * 3); for (let i = 0; i < N; i++) { const p = fn(i, i / N); a[i*3] = p[0]; a[i*3+1] = p[1]; a[i*3+2] = p[2]; } return a; }
+
+  // 0 · AI core: fibonacci sphere with an inner shell
+  const sphere = make((i, t) => {
+    const inner = i % 5 === 0;
+    const k = inner ? i / 5 : i;
+    const n = inner ? N / 5 : N;
+    const y = 1 - (k / n) * 2, r = Math.sqrt(1 - y * y), th = k * 2.39996;
+    const R = inner ? 1.1 : 2.25 + rnd(.04);
+    return [Math.cos(th) * r * R, y * R, Math.sin(th) * r * R];
+  });
+
+  // 1 · Orbit rings: three tilted rings around a core
+  const rings = make((i, t) => {
+    const g = i % 4;
+    if (g === 3) { const u = Math.random() * TAU, v = Math.acos(rnd()), R = .55; return [Math.sin(v)*Math.cos(u)*R, Math.cos(v)*R, Math.sin(v)*Math.sin(u)*R]; }
+    const a = Math.random() * TAU, R = 2.3 + rnd(.06), tube = rnd(.07);
+    let x = Math.cos(a) * (R + tube), y = rnd(.05), z = Math.sin(a) * (R + tube);
+    const tilt = [0, 1.05, -1.05][g], tw = [0.35, 0, 0][g];
+    const cy = Math.cos(tilt), sy = Math.sin(tilt);
+    let y2 = y * cy - z * sy, z2 = y * sy + z * cy;
+    const cz = Math.cos(tw + g), sz = Math.sin(tw + g);
+    return [x * cz - y2 * sz, x * sz + y2 * cz, z2];
+  });
+
+  // 2 · Smart glasses: two lens rims, bridge, temple arms
+  const glasses = make((i, t) => {
+    const r = Math.random();
+    if (r < .78) {
+      const side = r < .39 ? -1 : 1, a = Math.random() * TAU;
+      const rx = 1.05, ry = .82, tube = .09 * Math.sqrt(Math.random()), ta = Math.random() * TAU;
+      const fill = Math.random() < .18; // faint lens fill
+      if (fill) { const rr = Math.sqrt(Math.random()) * .95; return [side * 1.32 + Math.cos(a) * rx * rr, Math.sin(a) * ry * rr, rnd(.03)]; }
+      return [side * 1.32 + Math.cos(a) * (rx + Math.cos(ta) * tube), Math.sin(a) * (ry + Math.cos(ta) * tube) * (Math.sin(a) < 0 ? 1.08 : 1), Math.sin(ta) * tube];
+    }
+    if (r < .84) { const u = Math.random(); const x = -.28 + u * .56; return [x, .32 + Math.sin(u * Math.PI) * .18 + rnd(.03), rnd(.04)]; }
+    const side = Math.random() < .5 ? -1 : 1, u = Math.random();
+    const z = -u * 3.0, bend = u > .82 ? (u - .82) * 2.2 : 0;
+    return [side * (2.38 + rnd(.03)), .38 - bend + rnd(.03), z + rnd(.03)];
+  });
+
+  // 3 · Dashboard bars (MuscleCRM analytics)
+  const bars = make((i, t) => {
+    const cols = 7, c = i % cols, hgt = [1.1, 1.8, 1.4, 2.6, 2.1, 3.2, 3.8][c];
+    const x0 = (c - (cols - 1) / 2) * .72, w = .26;
+    const face = Math.random();
+    let x = x0 + rnd(w), y = -1.9 + Math.random() * hgt, z = rnd(w);
+    if (face < .5) { if (Math.random() < .5) x = x0 + (Math.random() < .5 ? -w : w); else z = Math.random() < .5 ? -w : w; }
+    else if (face < .6) y = -1.9 + hgt;
+    return [x, y, z];
+  });
+
+  // 4 · No-code blocks: 3x3x3 lattice of cube surfaces with a few lifted
+  const blocks = make((i, t) => {
+    const b = i % 27, bx = b % 3 - 1, by = Math.floor(b / 3) % 3 - 1, bz = Math.floor(b / 9) - 1;
+    const lift = (b === 4 || b === 22 || b === 14) ? .55 : 0;
+    const s = .42, f = Math.floor(Math.random() * 6), u = rnd(s), v = rnd(s);
+    const p = [[s,u,v],[-s,u,v],[u,s,v],[u,-s,v],[u,v,s],[u,v,-s]][f];
+    return [bx * 1.15 + p[0], by * 1.15 + p[1] + lift, bz * 1.15 + p[2] + lift * .6];
+  });
+
+  // 5 · Orbital globe (about: reach across industries)
+  const globe = make((i, t) => {
+    if (i % 3 === 0) { const a = Math.random() * TAU, R = 3.0 + rnd(.05); return [Math.cos(a) * R, Math.sin(a) * R * .22, Math.sin(a) * R]; }
+    const lat = (Math.floor(Math.random() * 9) - 4) / 4.5 * (Math.PI / 2), lon = Math.random() * TAU, R = 2.0;
+    const useLon = Math.random() < .45;
+    const la = useLon ? rnd(Math.PI / 2) : lat, lo = useLon ? Math.floor(Math.random() * 12) / 12 * TAU : lon;
+    return [Math.cos(la) * Math.cos(lo) * R, Math.sin(la) * R, Math.cos(la) * Math.sin(lo) * R];
+  });
+
+  // 6 · Double helix (people)
+  const helix = make((i, t) => {
+    const g = i % 5, u = Math.random(), y = (u - .5) * 6.2, a = u * TAU * 2.4, R = 1.15;
+    if (g === 4) { const k = Math.round(u * 26) / 26, yy = (k - .5) * 6.2, aa = k * TAU * 2.4, m = rnd(1); return [Math.cos(aa) * R * m, yy, Math.sin(aa) * R * m]; }
+    const off = g % 2 ? Math.PI : 0;
+    return [Math.cos(a + off) * R + rnd(.05), y + rnd(.03), Math.sin(a + off) * R + rnd(.05)];
+  });
+
+  // 7 · Signal wave plane (contact)
+  const wave = make((i, t) => {
+    const cols = small ? 70 : 100, rows = Math.ceil(N / cols);
+    const cx = i % cols, cz = Math.floor(i / cols);
+    const x = (cx / (cols - 1) - .5) * 9, z = (cz / (rows - 1) - .5) * 6;
+    const d = Math.hypot(x, z);
+    return [x, Math.sin(d * 1.6) * .35 * Math.exp(-d * .12) - .4, z];
+  });
+
+  const shapes = [sphere, rings, glasses, bars, blocks, globe, helix, wave];
+  const offsetsDesk = [2.3, 2.4, -2.4, -2.6, -2.3, 2.6, -2.5, 0];
+  const tiltDesk = [0, .25, .18, .2, .5, .25, 0, .55];
+
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(sphere);
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const col = new Float32Array(N * 3);
+  const cA = new THREE.Color('#ff9f45'), cB = new THREE.Color('#a99bff'), cC = new THREE.Color('#f4efff'), tmp = new THREE.Color();
+  const seed = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    const r = Math.random(); seed[i] = Math.random() * TAU;
+    if (r < .08) tmp.copy(cC); else tmp.copy(cA).lerp(cB, Math.random() ** .8);
+    col[i*3] = tmp.r; col[i*3+1] = tmp.g; col[i*3+2] = tmp.b;
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+
+  const spr = document.createElement('canvas'); spr.width = spr.height = 64;
+  const sx = spr.getContext('2d'); const gr = sx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.25, 'rgba(255,255,255,.75)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  sx.fillStyle = gr; sx.fillRect(0, 0, 64, 64);
+  const mat = new THREE.PointsMaterial({ size: small ? .065 : .062, map: new THREE.CanvasTexture(spr), vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: .95, sizeAttenuation: true });
+  const points = new THREE.Points(geo, mat);
+  const group = new THREE.Group(); group.add(points); scene.add(group);
+
+  // Background dust
+  const dN = small ? 500 : 1100, dPos = new Float32Array(dN * 3);
+  for (let i = 0; i < dN; i++) { dPos[i*3] = rnd(16); dPos[i*3+1] = rnd(10); dPos[i*3+2] = -4 - Math.random() * 14; }
+  const dGeo = new THREE.BufferGeometry(); dGeo.setAttribute('position', new THREE.BufferAttribute(dPos, 3));
+  const dust = new THREE.Points(dGeo, new THREE.PointsMaterial({ size: .045, color: 0x8f88c8, transparent: true, opacity: .45, depthWrite: false, map: mat.map, blending: THREE.AdditiveBlending }));
+  scene.add(dust);
+
+  // Section anchors → scroll state
+  const secs = [...document.querySelectorAll('[data-shape]')];
+  let anchors = [];
+  const measure = () => { anchors = secs.map(s => ({ y: s.getBoundingClientRect().top + scrollY, k: +s.dataset.shape })); };
+  measure(); addEventListener('load', measure);
+  const ease = t => t * t * (3 - 2 * t);
+
+  let mx = 0, my = 0, tmx = 0, tmy = 0;
+  addEventListener('pointermove', e => { tmx = e.clientX / W() * 2 - 1; tmy = e.clientY / H() * 2 - 1; }, { passive: true });
+
+  addEventListener('resize', () => {
+    camera.aspect = W() / H(); camera.updateProjectionMatrix();
+    renderer.setSize(W(), H()); measure();
+  });
+
+  const target = new Float32Array(N * 3);
+  let curOff = offsetsDesk[0], curTilt = 0, last = performance.now(), running = true;
+  document.addEventListener('visibilitychange', () => { running = !document.hidden; if (running) { last = performance.now(); requestAnimationFrame(frame); } });
+
+  function state() {
+    const y = scrollY + H() * .55;
+    let i = 0;
+    while (i < anchors.length - 1 && anchors[i + 1].y <= y) i++;
+    const a = anchors[i], b = anchors[Math.min(i + 1, anchors.length - 1)];
+    const span = Math.max(1, b.y - a.y);
+    const t = a === b ? 0 : Math.min(1, Math.max(0, (y - a.y) / span));
+    const m = ease(Math.min(1, Math.max(0, (t - .55) / .45)));
+    return { A: a.k, B: b.k, m };
+  }
+
+  function frame(now) {
+    if (!running) return;
+    const dt = Math.min(50, now - last) / 16.67; last = now;
+    const time = now * .001;
+    const { A, B, m } = state();
+    const sa = shapes[A], sb = shapes[B];
+    const wide = W() > 900;
+    const k = 1 - Math.pow(1 - .075, dt);
+    for (let i = 0, j = 0; i < N; i++, j += 3) {
+      const s = seed[i];
+      const wob = reduce ? 0 : .025;
+      target[j]   = sa[j]   + (sb[j]   - sa[j])   * m + Math.sin(time * 1.3 + s) * wob;
+      target[j+1] = sa[j+1] + (sb[j+1] - sa[j+1]) * m + Math.cos(time * 1.1 + s * 1.7) * wob;
+      target[j+2] = sa[j+2] + (sb[j+2] - sa[j+2]) * m;
+      if (B === 7 || A === 7) { // ripple when the wave is forming
+        const wv = (A === 7 ? 1 : m);
+        const d = Math.hypot(target[j], target[j+2]);
+        target[j+1] += Math.sin(d * 1.6 - time * 2) * .18 * wv * (reduce ? 0 : 1);
+      }
+      pos[j]   += (target[j]   - pos[j])   * k;
+      pos[j+1] += (target[j+1] - pos[j+1]) * k;
+      pos[j+2] += (target[j+2] - pos[j+2]) * k;
+    }
+    geo.attributes.position.needsUpdate = true;
+
+    const offT = wide ? offsetsDesk[A] + (offsetsDesk[B] - offsetsDesk[A]) * m : 0;
+    const tiltT = tiltDesk[A] + (tiltDesk[B] - tiltDesk[A]) * m;
+    curOff += (offT - curOff) * .06 * dt; curTilt += (tiltT - curTilt) * .06 * dt;
+    mx += (tmx - mx) * .05 * dt; my += (tmy - my) * .05 * dt;
+    group.position.x = curOff;
+    group.position.y = wide ? 0 : .6;
+    group.scale.setScalar(wide ? 1 : .78);
+    if (!reduce) points.rotation.y += .0022 * dt * (A === 7 && m < .2 ? .2 : 1);
+    group.rotation.x = curTilt + my * .18;
+    group.rotation.y = mx * .3;
+    mat.opacity = wide ? .95 : .55;
+    dust.rotation.y = mx * .05; dust.position.y = -scrollY * .0012;
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+# MeeraAI Tech Solutions LLP (MAIT)
+
+> Mumbai-based technology company, founded in 2023, building AI, AR/VR and assistive technology. Makers of SpectraSense smart glasses for people who are blind or have low vision, and Dropler.AI, which builds native mobile apps from a sentence.
+
+## Company
+- Legal name: MeeraAI Tech Solutions LLP. Short names: MAIT, MeeraAI.
+- Founded 2023 by a team of three engineers; now more than 20 people.
+- Address: 2nd Floor, A Wing 203, Rizvi Palace, Hill Road, Bandra (West), Mumbai 400 050, India.
+- Email: Official@meeraaitech.com. Phone: +91 97988 93573.
+- Leadership: Ambar Singh (Director, co-founder), Deepak Kasthwal (CFO), Amit Barve (Head Advisor), Mohammad Kaif Ali (Director), Vinod Kadkotra (Director).
+- LinkedIn: https://in.linkedin.com/company/meeraai-tech-solutions
+- Instagram: https://www.instagram.com/meeraaitech
+
+## Products
+- [SpectraSense](https://meeraaitech.com/#spectrasense): AI smart glasses for blind and low-vision users. A camera reads the scene, an AI processor finds what matters, and an open-ear speaker describes it: steps, obstacles, signs, bus numbers, printed text and currency. Multiple models, including one that processes everything on the glasses. No face recognition, by design.
+- [Dropler.AI](https://dropler.ai/): build native mobile apps, websites and dashboards from a sentence. Product, Design, Developer and QA agents produce React, TypeScript, Tailwind and Expo code that customers own and can push to GitHub. Live now.
+- [MuscleCRM](https://musclecrm.com/): CRM for gyms and wellness clubs covering members, class and session booking, billing, analytics, personal training and WhatsApp/SMS/email communication.
+- Voice Chat Social Platform: real-time voice rooms for communities.
+- Immersive AR Shopping: true-to-scale 3D product placement in a customer's home before purchase.
+
+## Services
+- AI integration
+- AR/VR development
+- Smart glasses and assistive hardware
+- AI app building (Dropler.AI)
+- Custom software development
+- Social media voice chat
+- Cloud solutions
+- Data analytics and business intelligence
+
+## Contact
+For projects, partnerships or a SpectraSense demo: Official@meeraaitech.com or the form at https://meeraaitech.com/#contact
